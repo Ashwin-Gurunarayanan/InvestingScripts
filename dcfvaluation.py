@@ -52,21 +52,34 @@ def dcf_valuation(
     print(f"Total Shares Outstanding: {total_shares_outstanding:,.2f}")
     print(f"Intrinsic Value per Share: ₹{intrinsic_value_per_share:,.2f}\n")
 
-    # Append result to CSV file
+    # Append or update result in CSV file
     output_file = "dcf_valuations.csv"
-    file_exists = os.path.isfile(output_file)
+    updated = False
+    rows = []
 
-    with open(output_file, mode='a', newline='') as file:
+    if os.path.isfile(output_file):
+        with open(output_file, mode='r', newline='') as file:
+            reader = csv.reader(file)
+            header = next(reader)
+            for row in reader:
+                if row[0] == company_name:
+                    rows.append([company_name, round(intrinsic_value_per_share, 2)])
+                    updated = True
+                else:
+                    rows.append(row)
+
+    if not updated:
+        rows.append([company_name, round(intrinsic_value_per_share, 2)])
+
+    with open(output_file, mode='w', newline='') as file:
         writer = csv.writer(file)
-        if not file_exists:
-            writer.writerow(["Company Name", "Intrinsic Value per Share (₹)"])
-        writer.writerow([company_name, round(intrinsic_value_per_share, 2)])
+        writer.writerow(["Company Name", "Intrinsic Value per Share (₹)"])
+        writer.writerows(rows)
 
-    print(f"Valuation result appended to {output_file}")
+    print(f"Valuation result saved to {output_file}")
     return intrinsic_value_per_share
 
 if __name__ == "__main__":
-    # python dcf_valuation_tool.py --company "JK Paper" --ocf 13759 --capex 2403 --shares 189.6 --growth 0.05 --discount 0.10 --terminal 0.04
     parser = argparse.ArgumentParser(description="DCF Valuation Calculator")
     parser.add_argument("--company", type=str, required=True, help="Company Name")
     parser.add_argument("--ocf", type=float, required=True, help="Operating Cash Flow (₹ million)")
